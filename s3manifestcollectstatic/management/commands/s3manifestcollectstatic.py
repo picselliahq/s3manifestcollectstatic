@@ -32,6 +32,13 @@ class Command(BaseCommand):
         self.verbosity = options["verbosity"]
 
         with TemporaryDirectory() as tmpdirname:
+            # Save custom settings 
+            # STATIC_ROOT=BASE_DIR/static
+
+            # STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
+            # or
+            # STATICFILES_STORAGE = 'picsell_os.storage_backends.CustomManifestStaticStorage'
+            # 
             saved_static_root = settings.STATIC_ROOT
             saved_storage = settings.STATICFILES_STORAGE
 
@@ -40,10 +47,12 @@ class Command(BaseCommand):
                 "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
             )
 
-            call_command("collectstatic")
+            call_command("collectstatic")    
 
             settings.STATIC_ROOT = saved_static_root
             settings.STATICFILES_STORAGE = saved_storage
+
+
 
             storage = import_string(saved_storage)()
 
@@ -53,6 +62,7 @@ class Command(BaseCommand):
 
             if storage.exists(MANIFEST_PATH):
                 with storage.open(MANIFEST_PATH) as f:
+
                     already_uploaded = set(json.load(f)["paths"].values())
                     intersection = to_upload.intersection(already_uploaded)
                     self.log(f"{len(intersection)} files were already uploaded", level=1)
