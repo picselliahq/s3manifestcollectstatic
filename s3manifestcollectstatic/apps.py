@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class S3ManifestcollectstaticConfig(AppConfig):
+class PicselliaS3ManifestcollectstaticConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
-    name = "s3manifestcollectstatic"
+    name = "picsellias3manifestcollectstatic"

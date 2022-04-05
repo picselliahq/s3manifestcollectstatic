@@ -1,14 +1,16 @@
-# s3manifestcollectstatic
+# picsellia-s3manifestcollectstatic
+This is a fork of https://github.com/dduong42/s3manifestcollectstatic
 
-Optimized collectstatic for S3ManifestStaticStorage
+Optimized collectstatic for S3ManifestStaticStorage.
+With max_workers parameters and custom handler of exception while uploading files
 
 ## Installation
 
 1. Install the package
 ```
-pip install s3manifestcollectstatic
+pip install picsellia-s3manifestcollectstatic
 ```
-2. Add `s3manifestcollectstatic` to `INSTALLED_APPS`
+2. Add `picsellias3manifestcollectstatic` to `INSTALLED_APPS`
 
 ## Description
 
