@@ -2,6 +2,6 @@
 requires = [
     "setuptools>=42",
     "wheel",
-    "Django==3.1.0",
+    "Django>=3.1.0",
 ]
 build-backend = "setuptools.build_meta"
