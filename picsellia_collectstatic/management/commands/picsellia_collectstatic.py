@@ -4,11 +4,27 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from django.conf import settings
+from django.contrib.staticfiles.storage import ManifestFilesMixin, StaticFilesStorage
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.utils.module_loading import import_string
 
 MANIFEST_PATH = "staticfiles.json"
+
+
+class PicselliaManifestFilesMixin(ManifestFilesMixin):
+    def hashed_name(self, name, content=None, filename=None):
+        if name.startswith("dist/"):
+            return name
+        return super(PicselliaManifestFilesMixin, self).hashed_name(
+            name, content, filename
+        )
+
+
+class PicselliaManifestStaticFilesStorage(
+    PicselliaManifestFilesMixin, StaticFilesStorage
+):
+    pass
 
 
 class Command(BaseCommand):
@@ -49,9 +65,7 @@ class Command(BaseCommand):
             # 1. Collect static with ManifestStaticFiles => Generate hashed filenames
             # 2 differents hashes => 2 different content files
             settings.STATIC_ROOT = tmpdirname
-            settings.STATICFILES_STORAGE = (
-                "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
-            )
+            settings.STATICFILES_STORAGE = "picsellia_collectstatic.management.commands.picsellia_collectstatic.PicselliaManifestStaticFilesStorage"
 
             call_command("collectstatic")
 
@@ -91,7 +105,9 @@ class Command(BaseCommand):
             self.log(f"Start the upload of {len(to_upload)} files")
 
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                futures = {executor.submit(_save_asset, path) : path for path in to_upload}
+                futures = {
+                    executor.submit(_save_asset, path): path for path in to_upload
+                }
                 to_retry = []
                 for future in as_completed(futures):
                     path = futures[future]
@@ -99,17 +115,27 @@ class Command(BaseCommand):
                         uploaded = future.result()
                         self.log(f"{uploaded} was uploaded")
                     except Exception as e:
-                        self.log("Something went wrong ({}) with file {}. Will retry".format(str(e), path))
+                        self.log(
+                            "Something went wrong ({}) with file {}. Will retry".format(
+                                str(e), path
+                            )
+                        )
                         to_retry.append(path)
 
-                retries = {executor.submit(_save_asset, path) : path for path in to_retry}
+                retries = {
+                    executor.submit(_save_asset, path): path for path in to_retry
+                }
                 for future in as_completed(retries):
                     path = retries[future]
                     try:
                         retried = future.result()
                         self.log(f"{retried} was finally uploaded")
                     except Exception as e:
-                        self.log("Something went wrong ({}) with file {} a second time. No retry".format(str(e), path))
+                        self.log(
+                            "Something went wrong ({}) with file {} a second time. No retry".format(
+                                str(e), path
+                            )
+                        )
                         still_error = True
 
             # 6. Save manifest in the end when everything succeeded
@@ -117,4 +143,6 @@ class Command(BaseCommand):
                 self.log("Uploading the manifest")
                 _save_asset(MANIFEST_PATH)
             else:
-                self.log("Did not upload the manifest because at least one error occured")
+                self.log(
+                    "Did not upload the manifest because at least one error occured"
+                )

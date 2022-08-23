@@ -2,4 +2,4 @@ from django.apps import AppConfig
 
 
 class PicselliaCollectstaticConfig(AppConfig):
-    name = "picselliacollectstatic"
+    name = "picsellia_collectstatic"
