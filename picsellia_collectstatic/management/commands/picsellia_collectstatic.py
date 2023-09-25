@@ -1,10 +1,12 @@
 import json
+import shutil
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from django.conf import settings
 from django.contrib.staticfiles.storage import ManifestFilesMixin, StaticFilesStorage
+from django.core.files.storage import FileSystemStorage
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.utils.module_loading import import_string
@@ -138,11 +140,20 @@ class Command(BaseCommand):
                         )
                         still_error = True
 
-            # 6. Save manifest in the end when everything succeeded
+            # 6. Upload manifest in the end when everything succeeded.
+            #    This forces using save for uploading, bypassing local manifest storage.
             if not still_error:
                 self.log("Uploading the manifest")
                 _save_asset(MANIFEST_PATH)
             else:
                 self.log(
-                    "Did not upload the manifest because at least one error occured"
+                    "Did not upload the manifest because at least one error occurred"
+                )
+
+            # 7. Save the manifest locally for production, if not already saved
+            if not still_error and not isinstance(storage, FileSystemStorage):
+                self.log("Saving the manifest locally")
+                shutil.copy(
+                    f"{tmpdirname}/{MANIFEST_PATH}",
+                    f"{settings.BASE_DIR}/{MANIFEST_PATH}",
                 )
